@@ -7,11 +7,17 @@
     }
   ],
   "rewrites": [
-    { "source": "/api/explorer/(.*)", "destination": "/api/explorer-proxy?path=$1" },
-    { "source": "/api/rpc",           "destination": "/api/rpc-proxy"              }
+    {
+      "source": "/api/explorer/(.*)",
+      "destination": "/api/explorer-proxy?path=$1"
+    },
+    {
+      "source": "/api/rpc",
+      "destination": "/api/rpc-proxy"
+    }
   ],
   "functions": {
-    "api/sync.js": {
+    "api/*.js": {
       "maxDuration": 300
     }
   }
