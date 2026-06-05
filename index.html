@@ -1,0 +1,1182 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Content Explorer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* ===== Reset ===== */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
+/* ===== CSS Variables ===== */
+:root{
+  --bg-primary:#ffffff;
+  --bg-secondary:#f8f9fb;
+  --bg-sidebar:#fafbfc;
+  --bg-hover:#f1f5f9;
+  --bg-active:#eef2ff;
+  --border-subtle:#f0f1f3;
+  --border-default:#e5e7eb;
+  --border-strong:#d1d5db;
+  --text-primary:#0f172a;
+  --text-secondary:#475569;
+  --text-muted:#94a3b8;
+  --accent:#14b8a6;
+  --accent-hover:#0d9488;
+  --accent-light:#ccfbf1;
+  --blue:#3b82f6;
+  --blue-light:#dbeafe;
+  --blue-hover:#2563eb;
+  --arch-gold:#c5932e;
+  --arch-gold-light:#fef3c7;
+  --green:#10b981;
+  --green-light:#d1fae5;
+  --red:#ef4444;
+  --orange:#f59e0b;
+  --orange-light:#fef9c3;
+  --radius-xl:14px;
+  --radius-lg:10px;
+  --radius-md:8px;
+  --radius-sm:6px;
+  --shadow-xs:0 1px 2px rgba(0,0,0,0.03);
+  --shadow-sm:0 1px 3px rgba(0,0,0,0.05),0 1px 2px rgba(0,0,0,0.04);
+  --shadow-md:0 4px 12px rgba(0,0,0,0.06),0 1px 3px rgba(0,0,0,0.04);
+  --shadow-lg:0 12px 32px rgba(0,0,0,0.08),0 2px 6px rgba(0,0,0,0.04);
+  --ease-out:cubic-bezier(0.33,1,0.68,1);
+  --ease-spring:cubic-bezier(0.34,1.56,0.64,1);
+}
+
+/* ===== Base ===== */
+html{scroll-behavior:smooth;background:var(--bg-primary)}
+body{
+  font-family:'DM Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  background:var(--bg-primary);
+  color:var(--text-primary);
+  line-height:1.6;
+  min-height:100vh;
+  -webkit-font-smoothing:antialiased;
+  -moz-osx-font-smoothing:grayscale;
+}
+
+/* ===== Navbar ===== */
+.navbar{
+  position:sticky;top:0;z-index:100;
+  background:rgba(255,255,255,0.82);
+  backdrop-filter:blur(14px);
+  -webkit-backdrop-filter:blur(14px);
+  border-bottom:1px solid var(--border-subtle);
+  padding:0 24px;
+  height:56px;
+  display:flex;align-items:center;justify-content:space-between;
+  gap:16px;
+}
+.nav-left{
+  display:flex;align-items:center;gap:10px;
+  flex-shrink:0;
+}
+.nav-logo{
+  width:32px;height:32px;
+  border-radius:var(--radius-sm);
+  object-fit:contain;
+  flex-shrink:0;
+}
+.nav-title{
+  font-family:'Syne',sans-serif;
+  font-weight:700;font-size:16px;
+  color:var(--text-primary);
+  letter-spacing:-0.3px;
+}
+.nav-stats{
+  display:flex;align-items:center;gap:14px;
+  overflow-x:auto;
+  flex-shrink:1;
+}
+.nav-stat{
+  display:flex;align-items:center;gap:6px;
+  white-space:nowrap;
+  font-size:12px;
+  background:var(--bg-secondary);
+  border:1px solid var(--border-subtle);
+  border-radius:var(--radius-sm);
+  padding:6px 10px;
+  transition:all 0.2s var(--ease-out);
+}
+.nav-stat:hover{background:var(--bg-hover);border-color:var(--border-default)}
+.nav-stat-label{
+  color:var(--text-muted);
+  font-weight:500;
+  font-size:11px;
+  text-transform:uppercase;
+  letter-spacing:0.3px;
+}
+.nav-stat-value{
+  font-family:'JetBrains Mono','SF Mono',monospace;
+  font-weight:600;font-size:12px;
+  color:var(--text-primary);
+}
+.nav-stat-value.accent{color:var(--accent)}
+.nav-live-dot{
+  width:6px;height:6px;
+  border-radius:50%;
+  background:var(--green);
+  flex-shrink:0;
+  animation:pulse-dot 2.4s ease-in-out infinite;
+}
+@keyframes pulse-dot{
+  0%,100%{opacity:1;box-shadow:0 0 0 0 rgba(16,185,129,0.4)}
+  50%{opacity:0.5;box-shadow:0 0 0 6px rgba(16,185,129,0)}
+}
+.nav-live-text{
+  font-size:10px;color:var(--green);font-weight:600;
+  text-transform:uppercase;letter-spacing:0.5px;
+}
+
+/* ===== Layout ===== */
+.layout{
+  display:flex;
+  min-height:calc(100vh - 56px);
+}
+.main{
+  flex:1;
+  padding:24px 28px;
+  min-width:0;
+  overflow-y:auto;
+  max-width:1200px;
+  margin:0 auto;
+}
+
+/* ===== Sidebar ===== */
+.sidebar{
+  width:272px;flex-shrink:0;
+  background:var(--bg-sidebar);
+  border-right:1px solid var(--border-subtle);
+  padding:20px 14px;
+  display:flex;flex-direction:column;gap:6px;
+  overflow-y:auto;
+  position:sticky;top:56px;
+  height:calc(100vh - 56px);
+}
+.sidebar-header{
+  font-family:'Syne',sans-serif;
+  font-weight:700;font-size:11px;
+  text-transform:uppercase;
+  letter-spacing:0.8px;
+  color:var(--text-muted);
+  padding:8px 10px 4px;
+}
+.sidebar-cat{
+  display:flex;align-items:center;gap:10px;
+  padding:10px 12px;
+  border-radius:var(--radius-md);
+  cursor:pointer;
+  transition:all 0.18s var(--ease-out);
+  border:1px solid transparent;
+  font-size:14px;
+  font-weight:500;
+  color:var(--text-secondary);
+  text-decoration:none;
+  position:relative;
+}
+.sidebar-cat:hover{
+  background:var(--bg-hover);
+  color:var(--text-primary);
+}
+.sidebar-cat.active{
+  background:var(--bg-active);
+  color:var(--blue);
+  border-color:#e0e7ff;
+  font-weight:600;
+}
+.sidebar-cat .cat-count{
+  margin-left:auto;
+  font-size:11px;
+  font-weight:500;
+  color:var(--text-muted);
+  background:var(--bg-secondary);
+  padding:2px 7px;
+  border-radius:10px;
+  border:1px solid var(--border-subtle);
+}
+.cat-dot{
+  width:8px;height:8px;
+  border-radius:50%;
+  flex-shrink:0;
+  transition:box-shadow 0.2s var(--ease-out);
+}
+.cat-dot.blog{background:#f59e0b}
+.cat-dot.resource{background:#3b82f6}
+.cat-dot.video-cat{background:#ef4444}
+.cat-dot.events{background:#8b5cf6}
+.cat-dot.external{background:#10b981}
+.cat-dot.forum{background:#6366f1}
+.sidebar-divider{
+  height:1px;background:var(--border-subtle);
+  margin:8px 10px;
+}
+.sidebar-footer{
+  margin-top:auto;
+  padding:12px 10px;
+  border-top:1px solid var(--border-subtle);
+}
+
+/* ===== Main Content ===== */
+.main-header{
+  display:flex;align-items:center;justify-content:space-between;
+  margin-bottom:24px;
+  flex-wrap:wrap;gap:12px;
+}
+.main-title{
+  font-family:'Syne',sans-serif;
+  font-weight:700;font-size:22px;
+  color:var(--text-primary);
+  letter-spacing:-0.5px;
+}
+.main-subtitle{
+  font-size:14px;color:var(--text-muted);
+  font-weight:400;margin-top:2px;
+}
+.sync-status{
+  display:flex;align-items:center;gap:6px;
+  font-size:11px;color:var(--text-muted);
+  font-weight:500;
+}
+.sync-dot{
+  width:7px;height:7px;border-radius:50%;
+  background:var(--green);
+  animation:pulse-dot 2.4s ease-in-out infinite;
+}
+.sync-dot.fetching{background:var(--orange);animation-duration:0.8s}
+
+/* ===== Hub Grid (All Categories) ===== */
+.hub-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(280px,1fr));
+  gap:16px;
+}
+.hub-card{
+  padding:24px;
+  background:var(--bg-primary);
+  border:1px solid var(--border-subtle);
+  border-radius:var(--radius-lg);
+  transition:all 0.25s var(--ease-out);
+  cursor:pointer;
+  position:relative;
+  overflow:hidden;
+}
+.hub-card:hover{
+  border-color:var(--border-default);
+  box-shadow:var(--shadow-md);
+  transform:translateY(-2px);
+}
+.hub-card::before{
+  content:'';
+  position:absolute;
+  top:0;left:0;
+  width:100%;height:3px;
+  opacity:0;
+  transition:opacity 0.25s var(--ease-out);
+}
+.hub-card.blog-acc::before{background:#f59e0b}
+.hub-card.resource-acc::before{background:#3b82f6}
+.hub-card.video-acc::before{background:#ef4444}
+.hub-card.events-acc::before{background:#8b5cf6}
+.hub-card.external-acc::before{background:#10b981}
+.hub-card.forum-acc::before{background:#6366f1}
+.hub-card:hover::before{opacity:1}
+.hub-card-icon{margin-bottom:14px}
+.hub-card-title{
+  font-family:'Syne',sans-serif;
+  font-weight:600;font-size:16px;
+  color:var(--text-primary);
+  margin-bottom:6px;
+  letter-spacing:-0.2px;
+}
+.hub-card-desc{
+  font-size:13px;color:var(--text-secondary);
+  line-height:1.6;
+  margin-bottom:14px;
+}
+.hub-card-meta{
+  display:flex;align-items:center;gap:12px;
+  font-size:11px;color:var(--text-muted);
+}
+.hub-card-link{
+  font-size:13px;font-weight:600;
+  color:var(--text-muted);
+  text-decoration:none;
+  transition:color 0.2s var(--ease-out);
+  display:inline-flex;align-items:center;gap:4px;
+}
+.hub-card:hover .hub-card-link{color:var(--blue)}
+
+/* ===== Content List (Category View) ===== */
+.content-list-header{
+  display:flex;align-items:center;justify-content:space-between;
+  margin-bottom:16px;
+  flex-wrap:wrap;gap:8px;
+}
+.content-count{
+  font-size:13px;color:var(--text-muted);
+  font-weight:500;
+}
+.content-sort{
+  font-size:12px;color:var(--text-muted);
+  border:1px solid var(--border-subtle);
+  border-radius:var(--radius-sm);
+  padding:5px 10px;
+  background:var(--bg-primary);
+  cursor:pointer;
+  font-family:inherit;
+}
+.content-sort:focus{outline:none;border-color:var(--blue)}
+.content-items{
+  display:flex;flex-direction:column;gap:6px;
+}
+.content-item{
+  display:flex;align-items:flex-start;gap:14px;
+  padding:14px 16px;
+  background:var(--bg-primary);
+  border:1px solid var(--border-subtle);
+  border-radius:var(--radius-md);
+  transition:all 0.18s var(--ease-out);
+  text-decoration:none;
+  color:inherit;
+  cursor:pointer;
+}
+.content-item:hover{
+  border-color:var(--border-default);
+  box-shadow:var(--shadow-sm);
+  background:var(--bg-secondary);
+}
+.content-item-icon{
+  width:36px;height:36px;
+  border-radius:var(--radius-sm);
+  display:flex;align-items:center;justify-content:center;
+  flex-shrink:0;
+  font-size:16px;
+}
+.content-item-icon.blog{background:#eff6ff;color:#3b82f6}
+.content-item-icon.video{background:#fef2f2;color:#ef4444}
+.content-item-icon.podcast{background:#f0fdf4;color:#10b981}
+.content-item-icon.resource{background:#fefce8;color:#eab308}
+.content-item-icon.external{background:#f5f3ff;color:#8b5cf6}
+.content-item-icon.forum{background:#f8fafc;color:#64748b}
+.content-item-icon.event{background:#fdf2f8;color:#ec4899}
+.content-item-icon.collection{background:#fff7ed;color:#f97316}
+.content-item-body{flex:1;min-width:0}
+.content-item-title{
+  font-weight:600;font-size:14px;
+  color:var(--text-primary);
+  line-height:1.4;
+  margin-bottom:4px;
+  display:-webkit-box;
+  -webkit-line-clamp:2;
+  -webkit-box-orient:vertical;
+  overflow:hidden;
+}
+.content-item-title.fetching-real{opacity:0.7}
+.content-item-meta{
+  display:flex;align-items:center;gap:10px;
+  font-size:11px;color:var(--text-muted);
+  flex-wrap:wrap;
+}
+.content-item-badge{
+  display:inline-block;
+  font-size:10px;font-weight:600;
+  text-transform:uppercase;
+  letter-spacing:0.4px;
+  padding:2px 7px;
+  border-radius:4px;
+  white-space:nowrap;
+}
+.badge-blog{background:#eff6ff;color:#2563eb}
+.badge-video{background:#fef2f2;color:#dc2626}
+.badge-podcast{background:#f0fdf4;color:#059669}
+.badge-resource{background:#fefce8;color:#ca8a04}
+.badge-external{background:#f5f3ff;color:#7c3aed}
+.badge-forum{background:#f8fafc;color:#475569}
+.badge-event{background:#fdf2f8;color:#db2777}
+.badge-collection{background:#fff7ed;color:#ea580c}
+.content-item-arrow{
+  color:var(--text-muted);
+  flex-shrink:0;
+  font-size:14px;
+  align-self:center;
+  transition:all 0.18s var(--ease-out);
+}
+.content-item:hover .content-item-arrow{
+  color:var(--blue);
+  transform:translateX(2px);
+}
+
+/* ===== Loading ===== */
+.loading-row{
+  display:flex;align-items:center;gap:10px;
+  padding:14px 16px;
+  color:var(--text-muted);
+  font-size:13px;
+}
+.loading-spinner{
+  width:16px;height:16px;
+  border:2px solid var(--border-default);
+  border-top-color:var(--blue);
+  border-radius:50%;
+  animation:spin 0.7s linear infinite;
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading-progress{
+  height:2px;
+  background:var(--border-subtle);
+  border-radius:1px;
+  margin-bottom:16px;
+  overflow:hidden;
+}
+.loading-progress-bar{
+  height:100%;
+  background:linear-gradient(90deg,var(--blue),var(--accent));
+  border-radius:1px;
+  transition:width 0.3s var(--ease-out);
+  width:0%;
+}
+.empty-state{
+  text-align:center;
+  padding:48px 24px;
+  color:var(--text-muted);
+}
+.empty-state-icon{font-size:40px;margin-bottom:12px}
+.empty-state-text{font-size:14px}
+
+/* ===== Sidebar toggle (mobile) ===== */
+.sidebar-toggle{
+  display:none;
+  position:fixed;bottom:20px;left:16px;z-index:200;
+  width:48px;height:48px;
+  border-radius:50%;
+  background:var(--text-primary);
+  color:#fff;
+  border:none;
+  cursor:pointer;
+  font-size:20px;
+  box-shadow:var(--shadow-lg);
+  transition:all 0.2s var(--ease-out);
+}
+.sidebar-toggle:hover{transform:scale(1.06)}
+.sidebar-overlay{
+  display:none;
+  position:fixed;inset:0;z-index:150;
+  background:rgba(0,0,0,0.3);
+  backdrop-filter:blur(2px);
+}
+
+/* ===== Footer ===== */
+.footer{
+  border-top:1px solid var(--border-subtle);
+  padding:20px 28px;
+  display:flex;align-items:center;justify-content:center;
+  gap:20px;
+  flex-wrap:wrap;
+  font-size:13px;
+}
+.footer a{
+  color:var(--text-muted);
+  text-decoration:none;
+  transition:color 0.18s var(--ease-out);
+  font-weight:500;
+}
+.footer a:hover{color:var(--blue)}
+
+/* ===== Scrollbar ===== */
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border-default);border-radius:3px}
+::-webkit-scrollbar-thumb:hover{background:var(--border-strong)}
+
+/* ===== Responsive ===== */
+@media(max-width:900px){
+  .sidebar{
+    position:fixed;left:-272px;top:56px;z-index:160;
+    width:272px;
+    transition:left 0.28s var(--ease-out);
+    box-shadow:var(--shadow-lg);
+    border-right:1px solid var(--border-default);
+  }
+  .sidebar.open{left:0}
+  .sidebar-toggle{display:flex;align-items:center;justify-content:center}
+  .sidebar-overlay.active{display:block}
+  .main{padding:16px}
+  .navbar{padding:0 14px}
+  .nav-title{font-size:14px}
+  .nav-stats{gap:8px}
+  .nav-stat{padding:4px 8px;font-size:11px}
+  .nav-stat-label{font-size:10px}
+  .nav-stat-value{font-size:11px}
+  .nav-live-text{display:none}
+  .hub-grid{grid-template-columns:1fr}
+  .content-item{padding:12px}
+  .content-item-title{font-size:13px}
+}
+@media(max-width:540px){
+  .nav-logo{width:26px;height:26px}
+  .nav-title{display:none}
+  .nav-stats{overflow-x:auto;-ms-overflow-style:none;scrollbar-width:none}
+  .nav-stats::-webkit-scrollbar{display:none}
+  .main-header{flex-direction:column;align-items:flex-start}
+  .main-title{font-size:18px}
+  .content-item-icon{width:28px;height:28px;font-size:13px}
+  .content-item{gap:10px;padding:10px 12px}
+}
+</style>
+</head>
+<body>
+
+<!-- Navbar -->
+<nav class="navbar">
+  <div class="nav-left">
+    <img class="nav-logo" src="logo.png" alt="Arc" onerror="this.style.display='none'">
+    <span class="nav-title">Content Explorer</span>
+  </div>
+  <div class="nav-stats" id="navStats">
+    <div class="nav-stat"><span class="nav-live-dot" id="navLiveDot"></span><span class="nav-live-text" id="navSourceLabel">Loading</span><span class="nav-stat-label">Block</span><span class="nav-stat-value accent" id="navBlock">---</span></div>
+    <div class="nav-stat"><span class="nav-stat-label">Block Time</span><span class="nav-stat-value" id="navBlockTime">---</span></div>
+    <div class="nav-stat"><span class="nav-stat-label">Total Txns</span><span class="nav-stat-value" id="navTxns">---</span></div>
+    <div class="nav-stat"><span class="nav-stat-label">Addresses</span><span class="nav-stat-value" id="navAddrs">---</span></div>
+    <div class="nav-stat"><span class="nav-stat-label">Gas</span><span class="nav-stat-value" id="navGas">---</span></div>
+    <div class="nav-stat"><span class="nav-stat-label">24h Txns</span><span class="nav-stat-value" id="navDaily">---</span></div>
+  </div>
+</nav>
+
+<!-- Layout -->
+<div class="layout">
+  <!-- Sidebar -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-header">Categories</div>
+    <div class="sidebar-cat all-posts active" data-cat="all" onclick="selectCategory('all')">
+      <span style="font-size:16px">&#9670;</span> All Categories
+      <span class="cat-count" id="countAll">---</span>
+    </div>
+    <div class="sidebar-divider"></div>
+    <div class="sidebar-cat" data-cat="blog" onclick="selectCategory('blog')">
+      <span class="cat-dot blog"></span> Blog
+      <span class="cat-count" id="countBlog">---</span>
+    </div>
+    <div class="sidebar-cat" data-cat="resource" onclick="selectCategory('resource')">
+      <span class="cat-dot resource"></span> Resource
+      <span class="cat-count" id="countResource">---</span>
+    </div>
+    <div class="sidebar-cat" data-cat="video" onclick="selectCategory('video')">
+      <span class="cat-dot video-cat"></span> Video
+      <span class="cat-count" id="countVideo">---</span>
+    </div>
+    <div class="sidebar-cat" data-cat="events" onclick="selectCategory('events')">
+      <span class="cat-dot events"></span> Events
+      <span class="cat-count" id="countEvents">---</span>
+    </div>
+    <div class="sidebar-cat" data-cat="external" onclick="selectCategory('external')">
+      <span class="cat-dot external"></span> External Content
+      <span class="cat-count" id="countExternal">---</span>
+    </div>
+    <div class="sidebar-cat" data-cat="forum" onclick="selectCategory('forum')">
+      <span class="cat-dot forum"></span> Forum
+      <span class="cat-count" id="countForum">---</span>
+    </div>
+    <div class="sidebar-divider"></div>
+    <div style="padding:6px 10px">
+      <a href="https://community.arc.io" target="_blank" rel="noopener" style="font-size:12px;color:var(--text-muted);text-decoration:none;display:flex;align-items:center;gap:4px;">
+        Open Arc House &#8599;
+      </a>
+    </div>
+    <div class="sidebar-footer">
+      <div class="sync-status" id="syncStatus">
+        <span class="sync-dot" id="syncDot"></span>
+        <span id="syncLabel">Loading content...</span>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Sidebar overlay (mobile) -->
+  <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+  <button class="sidebar-toggle" id="sidebarToggle" onclick="toggleSidebar()">&#9776;</button>
+
+  <!-- Main Content -->
+  <main class="main">
+    <div class="main-header">
+      <div>
+        <h2 class="main-title" id="mainTitle">Content Explorer</h2>
+        <p class="main-subtitle" id="mainSubtitle">Loading content from Arc House...</p>
+      </div>
+    </div>
+
+    <!-- Loading progress -->
+    <div class="loading-progress" id="loadingProgress" style="display:none">
+      <div class="loading-progress-bar" id="loadingProgressBar"></div>
+    </div>
+
+    <!-- Hub Grid (shown for "all" category) -->
+    <div class="hub-grid" id="hubGrid">
+      <div class="hub-card blog-acc" data-cat="blog" onclick="selectCategory('blog')">
+        <div class="hub-card-icon"><span class="cat-dot blog" style="width:14px;height:14px;display:inline-block"></span></div>
+        <h3 class="hub-card-title">Blog</h3>
+        <p class="hub-card-desc">Official blog posts, community stories, and written content from the Arc ecosystem.</p>
+        <div class="hub-card-meta"><span id="hubCountBlog">---</span> posts</div>
+      </div>
+      <div class="hub-card resource-acc" data-cat="resource" onclick="selectCategory('resource')">
+        <div class="hub-card-icon"><span class="cat-dot resource" style="width:14px;height:14px;display:inline-block"></span></div>
+        <h3 class="hub-card-title">Resource</h3>
+        <p class="hub-card-desc">Documentation, guides, podcasts, collections, and developer resources.</p>
+        <div class="hub-card-meta"><span id="hubCountResource">---</span> posts</div>
+      </div>
+      <div class="hub-card video-acc" data-cat="video" onclick="selectCategory('video')">
+        <div class="hub-card-icon"><span class="cat-dot video-cat" style="width:14px;height:14px;display:inline-block"></span></div>
+        <h3 class="hub-card-title">Video</h3>
+        <p class="hub-card-desc">Video content, tutorials, demos, and community recordings.</p>
+        <div class="hub-card-meta"><span id="hubCountVideo">---</span> posts</div>
+      </div>
+      <div class="hub-card events-acc" data-cat="events" onclick="selectCategory('events')">
+        <div class="hub-card-icon"><span class="cat-dot events" style="width:14px;height:14px;display:inline-block"></span></div>
+        <h3 class="hub-card-title">Events</h3>
+        <p class="hub-card-desc">Hackathons, meetups, workshops, conferences, and online community calls.</p>
+        <div class="hub-card-meta"><span id="hubCountEvents">---</span> posts</div>
+      </div>
+      <div class="hub-card external-acc" data-cat="external" onclick="selectCategory('external')">
+        <div class="hub-card-icon"><span class="cat-dot external" style="width:14px;height:14px;display:inline-block"></span></div>
+        <h3 class="hub-card-title">External Content</h3>
+        <p class="hub-card-desc">Third-party articles, links, and external resources shared by the community.</p>
+        <div class="hub-card-meta"><span id="hubCountExternal">---</span> posts</div>
+      </div>
+<div class="hub-card forum-acc" data-cat="forum" onclick="selectCategory('forum')">
+        <div class="hub-card-icon"><span class="cat-dot forum" style="width:14px;height:14px;display:inline-block"></span></div>
+        <h3 class="hub-card-title">Forum</h3>
+        <p class="hub-card-desc">Community discussions, announcements, technical Q&A, and ecosystem chatter.</p>
+        <div class="hub-card-meta"><span id="hubCountForum">---</span> posts</div>
+      </div>
+    </div>
+
+    <!-- Content List (shown for specific categories) -->
+    <div class="content-list-header" id="contentListHeader" style="display:none">
+      <span class="content-count" id="contentCount"></span>
+      <select class="content-sort" id="contentSort" onchange="renderContentList()">
+        <option value="newest">Newest first</option>
+        <option value="oldest">Oldest first</option>
+      </select>
+    </div>
+<div class="content-items" id="contentItems" style="display:none"></div>
+    <div class="empty-state" id="emptyState" style="display:none">
+      <div class="empty-state-icon">---</div>
+      <div class="empty-state-text">No content found in this category</div>
+    </div>
+  </main>
+</div>
+
+<!-- Footer -->
+<footer class="footer">
+  <a href="https://x.com/Arthur_AqA" target="_blank" rel="noopener" style="color:var(--text-secondary);font-weight:600">@Arthur_AqA</a>
+  <span style="color:var(--border-default)">|</span>
+  <span style="color:var(--text-muted);font-size:12px">Arc Ecosystem:</span>
+  <a href="https://docs.arc.io" target="_blank" rel="noopener">Docs</a>
+  <a href="https://testnet.arcscan.app" target="_blank" rel="noopener">Block Explorer</a>
+  <a href="https://faucet.circle.com" target="_blank" rel="noopener">Faucet</a>
+  <a href="https://community.arc.io" target="_blank" rel="noopener">Community</a>
+  <a href="https://rpc.testnet.arc.network" target="_blank" rel="noopener">RPC</a>
+  <span style="color:var(--text-muted);font-size:11px;margin-left:auto">Chain ID: 5042002</span>
+</footer>
+
+<script>
+/* ================================================================
+   Content Explorer — Content Engine + Data Engine
+   ================================================================ */
+
+// ---- Configuration ----
+const EXPLORER_BASE       = '/api/explorer';
+const RPC_URL             = '/api/rpc';
+const EXPLORER_STATS_V2   = EXPLORER_BASE + '/api/v2/stats';
+const EXPLORER_STATS_V1   = EXPLORER_BASE + '/api/v1/stats';
+const BLOCK_REFRESH_MS    = 15000;
+const EXPLORER_REFRESH_MS = 60000;
+// 服务端缓存 API — 内容由服务器统一抓取并缓存，客户端直接取结果
+const CONTENT_API_URL     = '/api/content';
+
+// ---- State ----
+let activeCategory = 'all';
+let allContent = [];
+let contentMap = {};   // URL -> item
+let categoryCounts = {};
+
+let stats = {
+  latestBlock: null,
+  blockTime: null,
+  totalTxns: null,
+  totalAddresses: null,
+  gasPrice: null,
+  dailyTxns: null
+};
+let explorerAvailable = false;
+let lastSeenBlock = null;
+
+// ---- Utilities ----
+
+function formatNumber(n) {
+  if (n == null) return '---';
+  if (n >= 1e9) return (n / 1e9).toFixed(1) + 'B';
+  if (n >= 1e6) return (n / 1e6).toFixed(1) + 'M';
+  if (n >= 1e3) return (n / 1e3).toFixed(1) + 'K';
+  return String(Math.floor(n));
+}
+
+function formatGas(gwei) {
+  if (gwei == null) return '---';
+  if (gwei < 1) return gwei.toFixed(3) + ' gwei';
+  return gwei.toFixed(1) + ' gwei';
+}
+
+function el(id) { return document.getElementById(id); }
+
+function timeAgo(dateStr) {
+  if (!dateStr) return '';
+  var d = new Date(dateStr);
+  if (isNaN(d.getTime())) return '';
+  var now = new Date();
+  var diff = now - d;
+  var mins = Math.floor(diff / 60000);
+  var hrs = Math.floor(diff / 3600000);
+  var days = Math.floor(diff / 86400000);
+  if (mins < 1) return 'Just now';
+  if (mins < 60) return mins + 'm ago';
+  if (hrs < 24) return hrs + 'h ago';
+  if (days < 30) return days + 'd ago';
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+}
+
+// ================================================================
+// 服务端缓存 API 调用
+// 所有 sitemap 抓取 + 标题解析均由服务端完成并缓存
+// 客户端只做一次 GET /api/content，拿到完整已处理数据
+// ================================================================
+
+async function loadAllContent() {
+  updateSyncStatus('fetching', 'Loading content...');
+  el('loadingProgress').style.display = 'block';
+  el('loadingProgressBar').style.width = '30%';
+
+  try {
+    var resp = await fetch(CONTENT_API_URL, { cache: 'no-store' });
+    if (!resp.ok) throw new Error('HTTP ' + resp.status);
+
+    el('loadingProgressBar').style.width = '80%';
+    var json = await resp.json();
+    if (!json.ok && json.empty) {
+      updateSyncStatus('idle', 'Database empty — sync not yet run');
+      el('mainSubtitle').textContent = 'First sync pending. Visit /api/sync?secret=YOUR_SYNC_SECRET to populate the database.';
+      el('loadingProgress').style.display = 'none';
+      return;
+    }
+    if (!json.ok) throw new Error(json.error || 'API error');
+
+    allContent = json.items;
+
+    // Rebuild contentMap for compatibility
+    contentMap = {};
+    for (var i = 0; i < allContent.length; i++) {
+      contentMap[allContent[i].url] = allContent[i];
+    }
+
+    el('loadingProgressBar').style.width = '100%';
+
+    updateCategoryCounts();
+    updateHubCounts();
+
+    var cacheAge  = json.age < 120 ? 'fresh' : Math.round(json.age / 60) + 'm ago';
+    var fromCache = resp.headers.get('X-Cache') === 'HIT';
+
+    console.log('[Content API] ' + allContent.length + ' items, cache: ' + (fromCache ? 'HIT' : 'MISS') + ', age: ' + cacheAge);
+
+    updateSyncStatus('idle', allContent.length + ' items · server cache (' + cacheAge + ')');
+    el('mainSubtitle').textContent = 'Your launchpad to the Arc ecosystem — ' + allContent.length + ' posts from Arc House, with live testnet data';
+
+  } catch (e) {
+    console.error('[Content API] Failed:', e.message);
+    updateSyncStatus('idle', 'Failed to load content');
+    el('mainSubtitle').textContent = 'Could not load content — check console for details';
+  } finally {
+    setTimeout(function() { el('loadingProgress').style.display = 'none'; }, 400);
+  }
+}
+
+function updateCategoryCounts() {
+  categoryCounts = { all: 0, blog: 0, resource: 0, video: 0, events: 0, external: 0, forum: 0 };
+  for (var i = 0; i < allContent.length; i++) {
+    var cat = allContent[i].category;
+    categoryCounts.all++;
+    if (categoryCounts[cat] != null) categoryCounts[cat]++;
+  }
+  // Update sidebar counts
+  var cats = ['all','blog','resource','video','events','external','forum'];
+  for (var c = 0; c < cats.length; c++) {
+    var id = 'count' + cats[c].charAt(0).toUpperCase() + cats[c].slice(1);
+    var elm = el(id);
+    if (elm) elm.textContent = categoryCounts[cats[c]] || 0;
+  }
+}
+
+function updateHubCounts() {
+  var cats = ['blog','resource','video','events','external','forum'];
+  for (var c = 0; c < cats.length; c++) {
+    var id = 'hubCount' + cats[c].charAt(0).toUpperCase() + cats[c].slice(1);
+    var elm = el(id);
+    if (elm) elm.textContent = categoryCounts[cats[c]] || 0;
+  }
+}
+
+function updateSyncStatus(state, text) {
+  var dot = el('syncDot');
+  var label = el('syncLabel');
+  if (dot) dot.className = 'sync-dot' + (state === 'fetching' ? ' fetching' : '');
+  if (label) label.textContent = text;
+}
+
+// ---- Render content list ----
+function renderContentList() {
+  var container = el('contentItems');
+  var sort = el('contentSort').value;
+  var items = [];
+
+  if (activeCategory === 'all') {
+    items = allContent.slice();
+  } else {
+    items = allContent.filter(function(it) { return it.category === activeCategory; });
+  }
+
+  // Sort
+  items.sort(function(a, b) {
+    var da = new Date(a.pubDate || a.lastmod || 0).getTime();
+    var db = new Date(b.pubDate || b.lastmod || 0).getTime();
+    return sort === 'newest' ? db - da : da - db;
+  });
+
+  el('contentCount').textContent = items.length + ' items';
+
+  if (items.length === 0) {
+    container.innerHTML = '';
+    container.style.display = 'none';
+    el('emptyState').style.display = 'block';
+    return;
+  }
+
+  el('emptyState').style.display = 'none';
+  container.style.display = 'flex';
+
+  var html = '';
+  var iconEmoji = { blog: '&#9998;', video: '&#9654;', podcast: '&#127897;', resource: '&#128196;', external: '&#128279;', forum: '&#128172;', event: '&#128197;', collection: '&#128451;' };
+  for (var i = 0; i < items.length; i++) {
+    var item = items[i];
+    var title = item.realTitle || item.title;
+    var isReal = !!item.realTitle;
+    var displayDate = item.pubDate || item.lastmod;
+    var dateStr = timeAgo(displayDate);
+    var emoji = iconEmoji[item.type] || '&#128196;';
+
+    html += '<a class="content-item" href="' + item.url + '" target="_blank" rel="noopener">';
+    html += '<div class="content-item-icon ' + item.type + '">' + emoji + '</div>';
+    html += '<div class="content-item-body">';
+    html += '<div class="content-item-title' + (!isReal ? ' fetching-real' : '') + '">' + escapeHtml(title) + '</div>';
+    html += '<div class="content-item-meta">';
+    html += '<span class="content-item-badge badge-' + item.type + '">' + item.type + '</span>';
+    if (dateStr) html += '<span>' + dateStr + '</span>';
+    html += '</div></div>';
+    html += '<span class="content-item-arrow">&#8599;</span>';
+    html += '</a>';
+  }
+
+  container.innerHTML = html;
+}
+
+function escapeHtml(str) {
+  return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
+// ---- Category selection ----
+function selectCategory(cat) {
+  activeCategory = cat;
+
+  // Update sidebar
+  document.querySelectorAll('.sidebar-cat').forEach(function(catEl) {
+    catEl.classList.toggle('active', catEl.dataset.cat === cat);
+  });
+
+  // Toggle views
+  var hubGrid = el('hubGrid');
+  var contentItems = el('contentItems');
+  var contentListHeader = el('contentListHeader');
+  var emptyState = el('emptyState');
+
+  if (cat === 'all') {
+    hubGrid.style.display = '';
+    contentItems.style.display = 'none';
+    contentListHeader.style.display = 'none';
+    emptyState.style.display = 'none';
+    el('mainTitle').textContent = 'Content Explorer';
+    el('mainSubtitle').textContent = 'Your launchpad to the Arc ecosystem — ' + allContent.length + ' posts from Arc House, with live testnet data';
+  } else {
+    hubGrid.style.display = 'none';
+    contentListHeader.style.display = 'flex';
+    var labels = {
+      blog: 'Blog', resource: 'Resource', video: 'Video',
+      events: 'Events', external: 'External Content',
+      forum: 'Forum'
+    };
+    el('mainTitle').textContent = labels[cat] || cat;
+    el('mainSubtitle').textContent = 'Posts from Arc House — ' + (categoryCounts[cat] || 0) + ' items';
+
+    renderContentList();
+  }
+
+  // Close sidebar on mobile
+  if (window.innerWidth <= 900) closeSidebar();
+}
+
+// ================================================================
+// Arc Testnet Data Engine
+// ================================================================
+
+function updateNavUI() {
+  if (stats.latestBlock) {
+    el('navBlock').textContent = '#' + stats.latestBlock.toLocaleString();
+  }
+  el('navBlockTime').textContent = stats.blockTime != null ? stats.blockTime.toFixed(2) + 's' : '---';
+  el('navTxns').textContent = formatNumber(stats.totalTxns);
+  el('navAddrs').textContent = formatNumber(stats.totalAddresses);
+  if (stats.gasPrice != null) {
+    el('navGas').textContent = formatGas(stats.gasPrice);
+  }
+  if (stats.dailyTxns != null) {
+    el('navDaily').textContent = formatNumber(stats.dailyTxns);
+  }
+  // Data source indicator
+  var dot = el('navLiveDot');
+  var label = el('navSourceLabel');
+  if (explorerAvailable) {
+    dot.style.background = '#10b981';
+    label.textContent = 'Explorer';
+    label.style.color = '#10b981';
+  } else if (stats.latestBlock) {
+    dot.style.background = '#3b82f6';
+    label.textContent = 'RPC';
+    label.style.color = '#3b82f6';
+  } else {
+    dot.style.background = '#ef4444';
+    label.textContent = 'Offline';
+    label.style.color = '#ef4444';
+  }
+}
+
+var rpcId = 0;
+
+async function rpcCall(method, params) {
+  if (!params) params = [];
+  try {
+    var res = await fetch(RPC_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ jsonrpc: '2.0', id: ++rpcId, method: method, params: params })
+    });
+    if (!res.ok) throw new Error('RPC HTTP ' + res.status);
+    var data = await res.json();
+    if (data.error) throw new Error(data.error.message);
+    return data.result;
+  } catch (e) {
+    console.warn('RPC call failed:', method, e.message);
+    return null;
+  }
+}
+
+async function updateBlockStats() {
+  var hexBlock = await rpcCall('eth_blockNumber');
+  if (!hexBlock) return;
+
+  var blockNum = parseInt(hexBlock, 16);
+  stats.latestBlock = blockNum;
+
+  // Fetch latest 5 blocks in parallel for stable block time
+  var timestamps = [];
+  var latestBaseFee = null;
+
+  var blockNums = [];
+  for (var i = 0; i < 5; i++) blockNums.push(blockNum - i);
+  var blocks = await Promise.all(blockNums.map(function(bn) {
+    return rpcCall('eth_getBlockByNumber', ['0x' + bn.toString(16), false]);
+  }));
+  for (var i = 0; i < blocks.length; i++) {
+    var block = blocks[i];
+    if (!block) continue;
+    if (block.timestamp) timestamps.push(parseInt(block.timestamp, 16));
+    if (i === 0 && block.baseFeePerGas != null) {
+      latestBaseFee = parseInt(block.baseFeePerGas, 16) / 1e9;
+    }
+  }
+
+  // Block time from timestamps
+  if (timestamps.length >= 2) {
+    var gaps = 0;
+    for (var t = 0; t < timestamps.length - 1; t++) {
+      gaps += timestamps[t] - timestamps[t + 1];
+    }
+    stats.blockTime = gaps / (timestamps.length - 1);
+  }
+
+  // Gas (from baseFeePerGas on latest block, fallback to eth_gasPrice)
+  if (latestBaseFee != null) {
+    stats.gasPrice = latestBaseFee;
+  } else {
+    var gasHex = await rpcCall('eth_gasPrice');
+    if (gasHex) stats.gasPrice = parseInt(gasHex, 16) / 1e9;
+  }
+
+  lastSeenBlock = blockNum;
+  updateNavUI();
+}
+
+async function fetchExplorerStats() {
+  var success = false;
+
+  // Approach 1: Blockscout REST API v2 via proxy (no cache-buster — Blockscout rejects unknown params)
+  try {
+    var resp = await fetch(EXPLORER_STATS_V2, { cache: 'no-store' });
+    console.log('[Explorer] v2 status:', resp.status);
+    if (resp.ok) {
+      var data = await resp.json();
+      console.log('[Explorer] v2 data keys:', Object.keys(data).join(', '));
+      console.log('[Explorer] v2 total_addresses:', data.total_addresses, 'total_transactions:', data.total_transactions);
+      if (applyExplorerData(data)) { success = true; console.log('[Explorer] SUCCESS: v2 stats'); }
+    } else {
+      var errText = await resp.text().catch(function() { return ''; });
+      console.warn('[Explorer] v2 failed HTTP ' + resp.status + ': ' + errText.substring(0, 300));
+    }
+  } catch (e) { console.warn('[Explorer] v2 error:', e.message); }
+
+  // Approach 2: Blockscout REST API v1 fallback (some older instances)
+  if (!success) {
+    try {
+      var resp1 = await fetch(EXPLORER_STATS_V1, { cache: 'no-store' });
+      console.log('[Explorer] v1 status:', resp1.status);
+      if (resp1.ok) {
+        var d1 = await resp1.json();
+        console.log('[Explorer] v1 data keys:', Object.keys(d1).join(', '));
+        if (applyExplorerData(d1)) { success = true; console.log('[Explorer] SUCCESS: v1 stats'); }
+      }
+    } catch (e) { console.warn('[Explorer] v1 error:', e.message); }
+  }
+
+  // Approach 3: Etherscan-compatible counters endpoint
+  if (!success) {
+    try {
+      var countersUrl = EXPLORER_BASE + '/api?module=stats&action=counters';
+      var resp2 = await fetch(countersUrl, { cache: 'no-store' });
+      console.log('[Explorer] counters-api status:', resp2.status);
+      if (resp2.ok) {
+        var d2 = await resp2.json();
+        console.log('[Explorer] counters-api data:', JSON.stringify(d2).substring(0, 300));
+        if (d2.result && d2.result.total_addresses) {
+          stats.totalAddresses = parseInt(d2.result.total_addresses, 10);
+          if (d2.result.total_transactions) stats.totalTxns = parseInt(d2.result.total_transactions, 10);
+          if (d2.result.transactions_today) stats.dailyTxns = parseInt(d2.result.transactions_today, 10);
+          explorerAvailable = true; success = true;
+          console.log('[Explorer] SUCCESS: etherscan counters');
+        }
+      }
+    } catch (e) { console.warn('[Explorer] counters-api error:', e.message); }
+  }
+
+  // Approach 4: Blockscout main-page stats endpoint
+  if (!success) {
+    try {
+      var mpUrl = EXPLORER_BASE + '/api/v2/main-page/transactions';
+      var mpResp = await fetch(mpUrl, { cache: 'no-store' });
+      console.log('[Explorer] main-page status:', mpResp.status);
+      if (mpResp.ok) {
+        var mpData = await mpResp.json();
+        console.log('[Explorer] main-page items:', Array.isArray(mpData) ? mpData.length : typeof mpData);
+        // This proves the proxy works; total stats still need v2
+      }
+    } catch (e) { console.warn('[Explorer] main-page error:', e.message); }
+  }
+
+  if (success) {
+    console.log('[Explorer] Data source: LIVE from testnet.arcscan.app');
+  } else {
+    explorerAvailable = false;
+    console.log('[Explorer] All approaches failed — totals unavailable.');
+  }
+
+  updateNavUI();
+}
+
+function applyExplorerData(data) {
+  if (!data) return false;
+  var applied = false;
+  if (data.total_addresses != null) {
+    stats.totalAddresses = parseInt(data.total_addresses, 10);
+    applied = true;
+  }
+  if (data.total_transactions != null) {
+    stats.totalTxns = parseInt(data.total_transactions, 10);
+    applied = true;
+  }
+  if (data.transactions_today != null) {
+    stats.dailyTxns = parseInt(data.transactions_today, 10);
+    applied = true;
+  }
+  if (data.average_block_time != null) {
+    stats.blockTime = parseFloat(data.average_block_time);
+    applied = true;
+  }
+  if (applied) explorerAvailable = true;
+  return applied;
+}
+
+function toggleSidebar() {
+  el('sidebar').classList.toggle('open');
+  el('sidebarOverlay').classList.toggle('active');
+}
+function closeSidebar() {
+  el('sidebar').classList.remove('open');
+  el('sidebarOverlay').classList.remove('active');
+}
+
+// ---- Polling interval IDs (for pause/resume on tab hidden) ----
+let blockInterval = null;
+let explorerInterval = null;
+
+async function init() {
+  // 1. Load all content from sitemaps (primary user-facing data)
+  await loadAllContent();
+
+  // 2. Start Arc RPC polling (block number, block time, gas price)
+  await updateBlockStats();
+  blockInterval = setInterval(updateBlockStats, BLOCK_REFRESH_MS);
+
+  // 3. Fetch explorer stats (total txns, addresses, 24h volume)
+  await fetchExplorerStats();
+  explorerInterval = setInterval(fetchExplorerStats, EXPLORER_REFRESH_MS);
+}
+
+// Pause polling when tab is hidden, resume when visible
+document.addEventListener('visibilitychange', function() {
+  if (document.hidden) {
+    if (blockInterval) { clearInterval(blockInterval); blockInterval = null; }
+    if (explorerInterval) { clearInterval(explorerInterval); explorerInterval = null; }
+  } else {
+    if (!blockInterval) { updateBlockStats(); blockInterval = setInterval(updateBlockStats, BLOCK_REFRESH_MS); }
+    if (!explorerInterval) { fetchExplorerStats(); explorerInterval = setInterval(fetchExplorerStats, EXPLORER_REFRESH_MS); }
+  }
+});
+
+document.addEventListener('DOMContentLoaded', init);
+
+window.addEventListener('resize', function() {
+  if (window.innerWidth > 900) closeSidebar();
+});
+</script>
+</body>
+</html>
